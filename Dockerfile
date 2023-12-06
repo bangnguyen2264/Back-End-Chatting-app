@@ -2,6 +2,6 @@ FROM maven:3.8.5-openjdk-17 AS build
 COPY . .
 RUN mvn clean package -DskipTests
 FROM openjdk:17.0.1-jdk-slim
-COPY --from-build /tagert/chatting-app-0.0.1-SNAPSHOT.jar chatting-app.jar
+COPY --from-build /target/chatting-app-0.0.1-SNAPSHOT.jar chatting-app.jar
 EXPOSE 8080
 ENTRYPOINT ["java",".-jar","chatting-app.jar"]
