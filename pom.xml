@@ -14,7 +14,7 @@
 	<name>chatting-app</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>20</java.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -83,7 +83,7 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
+			<dependency>
 			<groupId>org.modelmapper</groupId>
 			<artifactId>modelmapper</artifactId>
 			<version>3.2.0</version>
