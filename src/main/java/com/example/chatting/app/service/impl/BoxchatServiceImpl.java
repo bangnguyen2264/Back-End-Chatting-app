@@ -1,7 +1,8 @@
 package com.example.chatting.app.service.impl;
 
-import com.example.chatting.app.customException.exception.ChatNotFoundException;
-import com.example.chatting.app.customException.exception.UserNotFoundException;
+import com.example.chatting.app.customException.exception.ForbiddenException;
+import com.example.chatting.app.customException.exception.NotFoundException;
+import com.example.chatting.app.customException.exception.UnAcceptableException;
 import com.example.chatting.app.dto.BoxchatDto;
 import com.example.chatting.app.dto.UserDto;
 import com.example.chatting.app.form.GroupBoxchatForm;
@@ -10,14 +11,15 @@ import com.example.chatting.app.model.User;
 import com.example.chatting.app.repository.BoxchatRepository;
 import com.example.chatting.app.repository.UserRepository;
 import com.example.chatting.app.service.BoxchatService;
+import com.example.chatting.app.util.BoxchatUtility;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,11 +30,13 @@ public class BoxchatServiceImpl implements BoxchatService {
     private final UserRepository userRepository;
     private final BoxchatRepository boxchatRepository;
     private final ModelMapper modelMapper;
+    private final SimpMessageSendingOperations messagingTemplate;
+
     @Override
     public BoxchatDto createPrivateChat(Principal connectedUser, Long userId) {
-        User user1 = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
+        User user1 = BoxchatUtility.getUserFromPrincipal(connectedUser);
         User user2 = userRepository.findById(userId).orElseThrow(
-                ()-> new UserNotFoundException("User not found")
+                ()-> new NotFoundException("User not found")
         );
 
         Optional<Boxchat> existingPrivateChat = boxchatRepository.findPrivateChat(user1, user2);
@@ -46,59 +50,81 @@ public class BoxchatServiceImpl implements BoxchatService {
                     .members(new ArrayList<>(List.of(user1, user2)))
                     .build();
             boxchatRepository.save(privateChat);
+            for (User user : privateChat.getMembers()) {
+                user.getBoxchats().add(privateChat);
+                userRepository.save(user);
+            }
             return modelMapper.map(privateChat,BoxchatDto.class);
         }
     }
 
     @Override
     public BoxchatDto createGroupChat(Principal connectedUser, GroupBoxchatForm boxchatForm) {
-        User creator = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
-
-        // You might want to perform additional validation or checks here
-
-        // Check if there are exactly three members
-        List<User> members = boxchatForm.getMembers()
-                .stream().map(member -> modelMapper.map(member,User.class))
+        User creator = BoxchatUtility.getUserFromPrincipal(connectedUser);
+        List<User> members = boxchatForm.getMembersId()
+                .stream()
+                .map(userId -> userRepository.findById(userId).orElseThrow(
+                        () -> new NotFoundException("User not found with ID: " + userId)
+                ))
                 .collect(Collectors.toList());
-        if (members == null || members.size() != 2) {
-            throw new IllegalArgumentException("A group chat must have exactly three members.");
+
+        if (members.size() < 2) {
+            throw new UnAcceptableException("A group chat must have at least three members.");
         }
+
+        members.add(0, creator);
 
         Boxchat groupChat = Boxchat.builder()
                 .name(boxchatForm.getName())
                 .creator(creator.getUsername())
-                .members(new ArrayList<>(List.of(creator, members.get(0), members.get(1))))
+                .members(members)
                 .build();
 
         // Save the group chat to the database
         boxchatRepository.save(groupChat);
 
         return modelMapper.map(groupChat, BoxchatDto.class);
+
     }
+
+    @Override
+    public List<BoxchatDto> searchBoxchat(String query, Principal connectedUser) {
+        User user = BoxchatUtility.getUserFromPrincipal(connectedUser);
+        List<Boxchat> userBoxchats = boxchatRepository.searchBoxchat(query);
+        List<Boxchat> filteredBoxchats = userBoxchats.stream()
+                .filter(boxchat -> boxchat.getMembers().contains(user))
+                .collect(Collectors.toList());
+        return filteredBoxchats.stream()
+                .map(boxchat -> modelMapper.map(boxchat, BoxchatDto.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BoxchatDto> getListBoxChat(Principal connectedUser) {
+        User user = BoxchatUtility.getUserFromPrincipal(connectedUser);
+        List<Boxchat> userBoxchats = boxchatRepository.findByMembersId(user.getId());
+
+        return userBoxchats.stream()
+                .map(boxchat -> modelMapper.map(boxchat, BoxchatDto.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<UserDto> getListMemberOfBoxChat(Long id){
         Boxchat boxchat = boxchatRepository.findById(id).orElseThrow();
         return boxchat.getMembers().stream().map(
                 member -> modelMapper.map(member,UserDto.class))
                 .collect(Collectors.toList());
     }
-    public BoxchatDto addUser(Long chatId, Long userId) {
-        Boxchat existingChat = boxchatRepository.findById(chatId).orElseThrow(
-                () -> new ChatNotFoundException("Chat not found")
-        );
 
-        User userToAdd = userRepository.findById(userId).orElseThrow(
-                () -> new UserNotFoundException("User not found")
-        );
+    @Override
+    public BoxchatDto getBoxchatById(Principal connectedUser, Long boxchatId) {
+        User user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
 
-        if (existingChat.getMembers().contains(userToAdd)) {
-            throw new IllegalArgumentException("User is already a member of the chat");
-        }
+        Boxchat boxchat = boxchatRepository.findByIdAndMembersId(boxchatId, user.getId())
+                .orElseThrow(() -> new ForbiddenException("User is not a member of this chat"));
 
-        existingChat.getMembers().add(userToAdd);
-        boxchatRepository.save(existingChat);
-
-
-        return modelMapper.map(existingChat, BoxchatDto.class);
+        return modelMapper.map(boxchat, BoxchatDto.class);
     }
 
 

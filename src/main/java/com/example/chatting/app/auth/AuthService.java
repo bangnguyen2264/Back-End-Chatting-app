@@ -1,6 +1,6 @@
 package com.example.chatting.app.auth;
 
-import com.example.chatting.app.customException.exception.EmailorUserNamePresentException;
+import com.example.chatting.app.customException.exception.IsPresentException;
 import com.example.chatting.app.dto.AuthResponseDto;
 import com.example.chatting.app.enums.TokenType;
 import com.example.chatting.app.form.SignInForm;
@@ -44,7 +44,7 @@ public class AuthService {
                 .build();
         if (repository.findByEmail(request.getEmail()).isPresent() ||
                 repository.findByUsername(request.getUsername()).isPresent()) {
-            throw new EmailorUserNamePresentException("Email or Username already registered");
+            throw new IsPresentException("Email or Username already registered");
         }
         repository.save(user);
         return ResponseEntity.ok().body("Register complete");
@@ -59,8 +59,8 @@ public class AuthService {
         );
         var user = repository.findByUsername(signInForm.getUsername())
                 .orElseThrow();
-        var jwtToken = jwtService.generateToken((UserDetails) user);
-        var refreshToken = jwtService.generateRefreshToken((UserDetails) user);
+        var jwtToken = jwtService.generateToken(user);
+        var refreshToken = jwtService.generateRefreshToken(user);
         revokeAllUserTokens(user);
         saveUserToken(user, jwtToken);
         return

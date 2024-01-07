@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 
+import java.time.Period;
 import java.util.Collection;
 import java.util.List;
 
@@ -23,13 +24,14 @@ public class User implements UserDetails {
 
     @Id
     @GeneratedValue
-    private Integer id;
+    private Long id;
     private String firstname;
     private String lastname;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "image_id", referencedColumnName = "id")
     private Image avatar;
     private LocalDate dob;
+    @Transient
     private Integer age;
     private String username;
     private String email;
@@ -40,9 +42,17 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;
 
-    @ManyToMany(mappedBy ="members")
+    @ManyToMany(fetch = FetchType.LAZY) // Change to FetchType.LAZY if eager fetching is not required here
+    @JoinTable(
+            name = "boxchatmember",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "boxchat_id")
+    )
     private List<Boxchat> boxchats;
 
+    public Integer getAge() {
+        return Period.between(dob, LocalDate.now()).getYears();
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

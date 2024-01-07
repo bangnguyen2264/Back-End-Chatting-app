@@ -1,7 +1,7 @@
 package com.example.chatting.app.security;
 
 
-import com.example.chatting.app.customException.exception.UserNotFoundException;
+import com.example.chatting.app.customException.exception.NotFoundException;
 import com.example.chatting.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +23,7 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> (UserDetails) repository.findByUsername(username).orElseThrow(
-                ()-> new UserNotFoundException("User not found"));
+                ()-> new NotFoundException("User not found"));
     }
 
     @Bean

@@ -1,5 +1,5 @@
 package com.example.chatting.app.customException;
-import com.example.chatting.app.customException.exception.UserNotFoundException;
+import com.example.chatting.app.customException.exception.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -18,14 +18,47 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorObject> handleUserNotFoundException(UserNotFoundException ex, WebRequest request){
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorObject> handleUserNotFoundException(NotFoundException ex, WebRequest request){
         ErrorObject errorObject = new ErrorObject();
         errorObject.setStatusCode(HttpStatus.NOT_FOUND.value());
         errorObject.setMessage(ex.getMessage());
         errorObject.setTimestamp(new Date());
         return new ResponseEntity<ErrorObject>(errorObject,HttpStatus.NOT_FOUND);
     }
+    @ExceptionHandler(IsPresentException.class)
+    public ResponseEntity<ErrorObject> handleIsPresentException(IsPresentException ex, WebRequest request){
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        errorObject.setMessage(ex.getMessage());
+        errorObject.setTimestamp(new Date());
+        return new ResponseEntity<ErrorObject>(errorObject,HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(NotMatchException.class)
+    public ResponseEntity<ErrorObject> handleNotMatchException(NotMatchException ex, WebRequest request){
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(HttpStatus.CONFLICT.value());
+        errorObject.setMessage(ex.getMessage());
+        errorObject.setTimestamp(new Date());
+        return new ResponseEntity<ErrorObject>(errorObject,HttpStatus.CONFLICT);
+    }
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorObject> handleForbiddenException(ForbiddenException ex, WebRequest request){
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(HttpStatus.FORBIDDEN.value());
+        errorObject.setMessage(ex.getMessage());
+        errorObject.setTimestamp(new Date());
+        return new ResponseEntity<ErrorObject>(errorObject,HttpStatus.FORBIDDEN);
+    }
+    @ExceptionHandler(UnAcceptableException.class)
+    public ResponseEntity<ErrorObject> handleUnAcceptableException(UnAcceptableException ex, WebRequest request){
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(HttpStatus.NOT_ACCEPTABLE.value());
+        errorObject.setMessage(ex.getMessage());
+        errorObject.setTimestamp(new Date());
+        return new ResponseEntity<ErrorObject>(errorObject,HttpStatus.NOT_ACCEPTABLE);
+    }
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,

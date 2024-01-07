@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +18,11 @@ public interface BoxchatRepository extends JpaRepository<Boxchat, Long> {
             "AND :user1 MEMBER OF b.members " +
             "AND :user2 MEMBER OF b.members")
     Optional<Boxchat> findPrivateChat(@Param("user1") User user1, @Param("user2") User user2);
+    List<Boxchat> findByMembersId(Long userId);
+    Optional<Boxchat> findByIdAndMembersId(Long boxchatId, Long userId);
+    @Query("SELECT p FROM Boxchat p " +
+            "WHERE p.name like concat('%',:query,'%') " )
+    List<Boxchat> searchBoxchat(String query);
+
+
 }

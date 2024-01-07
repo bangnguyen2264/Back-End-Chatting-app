@@ -1,6 +1,7 @@
 package com.example.chatting.app.service.impl;
 
-import com.example.chatting.app.customException.exception.UserNotFoundException;
+import com.example.chatting.app.customException.exception.NotFoundException;
+import com.example.chatting.app.customException.exception.NotMatchException;
 import com.example.chatting.app.dto.UserDto;
 import com.example.chatting.app.form.ChangeNameForm;
 import com.example.chatting.app.form.ChangePasswordForm;
@@ -10,9 +11,7 @@ import com.example.chatting.app.repository.ImageRepository;
 import com.example.chatting.app.repository.UserRepository;
 import com.example.chatting.app.service.UserService;
 import com.example.chatting.app.util.ImageUtility;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,13 +27,19 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @CrossOrigin()
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelmapper;
+
+    public UserServiceImpl(UserRepository userRepository, ImageRepository imageRepository, PasswordEncoder passwordEncoder, ModelMapper modelmapper) {
+        this.userRepository = userRepository;
+        this.imageRepository = imageRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.modelmapper = modelmapper;
+    }
 
     @Override
     public List<UserDto> searchUser(String query) {
@@ -51,7 +56,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(()->  new UserNotFoundException("User not exist"));
+        User user = userRepository.findById(id).orElseThrow(()->  new NotFoundException("User not exist"));
         return modelmapper.map(user,UserDto.class) ;
     }
 
@@ -88,19 +93,15 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> changePassword(ChangePasswordForm request, Principal connectedUser) {
         User user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
 
-        // check if the current password is correct
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalStateException("Wrong password");
+            throw new NotMatchException("Wrong password");
         }
-        // check if the two new passwords are the same
         if (!request.getNewPassword().equals(request.getConfirmationPassword())) {
-            throw new IllegalStateException("Password are not the same");
+            throw new NotMatchException("Password are not the same");
         }
 
-        // update the password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
 
-        // save the new password
         userRepository.save(user);
         return ResponseEntity.ok().body("Change password complete");
     }
