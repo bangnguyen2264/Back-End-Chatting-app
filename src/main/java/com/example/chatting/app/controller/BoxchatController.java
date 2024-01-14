@@ -45,8 +45,8 @@ public class BoxchatController {
         return boxchatService.getListMemberOfBoxChat(id);
     }
     @GetMapping("{boxchatId}")
-    public BoxchatDto getBoxchatById(Principal connectedUser,@PathVariable(name = "boxchatId") Long boxchatId){
-        return getBoxchatById(connectedUser,boxchatId);
+    public BoxchatDto getBoxchatBxyId(Principal connectedUser,@PathVariable(name = "boxchatId") Long boxchatId){
+        return boxchatService.getBoxchatById(connectedUser,boxchatId);
     }
 
 }

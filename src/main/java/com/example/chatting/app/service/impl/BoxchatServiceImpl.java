@@ -91,9 +91,7 @@ public class BoxchatServiceImpl implements BoxchatService {
     public List<BoxchatDto> searchBoxchat(String query, Principal connectedUser) {
         User user = BoxchatUtility.getUserFromPrincipal(connectedUser);
         List<Boxchat> userBoxchats = boxchatRepository.searchBoxchat(query);
-        List<Boxchat> filteredBoxchats = userBoxchats.stream()
-                .filter(boxchat -> boxchat.getMembers().contains(user))
-                .collect(Collectors.toList());
+        List<Boxchat> filteredBoxchats = BoxchatUtility.filterBoxchatsByMember(user,userBoxchats);
         return filteredBoxchats.stream()
                 .map(boxchat -> modelMapper.map(boxchat, BoxchatDto.class))
                 .collect(Collectors.toList());

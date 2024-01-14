@@ -2,7 +2,7 @@ server:
   port: 8080
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/chatting_app
+    url: jdbc:postgresql://localhost:5432/chatapp
     username: postgres
     password: B-ang2264
     driver-class-name: org.postgresql.Driver

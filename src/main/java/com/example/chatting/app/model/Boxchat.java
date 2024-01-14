@@ -27,7 +27,7 @@ public class Boxchat {
     private LocalDate createTime;
     @UpdateTimestamp
     private LocalDate updateTime;
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "boxchatmember",
             joinColumns = @JoinColumn(name = "boxchat_id"),

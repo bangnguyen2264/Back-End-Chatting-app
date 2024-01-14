@@ -42,7 +42,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;
 
-    @ManyToMany(fetch = FetchType.LAZY) // Change to FetchType.LAZY if eager fetching is not required here
+    @ManyToMany(fetch = FetchType.EAGER) // Change to FetchType.LAZY if eager fetching is not required here
     @JoinTable(
             name = "boxchatmember",
             joinColumns = @JoinColumn(name = "user_id"),
